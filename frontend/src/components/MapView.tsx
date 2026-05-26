@@ -1,7 +1,8 @@
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { Restaurant } from '../types'
 import L from 'leaflet'
+import { MapPin } from './icons'
 
 function makePinIcon(color: string, selected = false): L.DivIcon {
   const size = selected ? 36 : 28
@@ -29,6 +30,37 @@ function makePinIcon(color: string, selected = false): L.DivIcon {
     iconSize: [size, size],
     iconAnchor: [size / 2, size],
     popupAnchor: [0, -size],
+  })
+}
+
+function makeImageIcon(photoUrl: string | undefined, selected = false): L.DivIcon {
+  const size = selected ? 56 : 48
+  if (!photoUrl) return makePinIcon('#f97316', selected)
+
+  return L.divIcon({
+    className: 'restaurant-image-icon',
+    html: `
+      <div style="
+        position: relative;
+        width: ${size}px;
+        height: ${size}px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 3px solid white;
+        box-shadow: 0 4px 16px rgba(15, 23, 42, ${selected ? 0.4 : 0.25});
+        transition: all 0.2s ease;
+        cursor: pointer;
+      ">
+        <img src="${photoUrl}" alt="restaurant" style="
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        " onerror="this.style.display='none'" />
+      </div>
+    `,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -size / 2 - 10],
   })
 }
 
@@ -60,6 +92,8 @@ interface Props {
 }
 
 export default function MapView({ location, restaurants, selectedPlaceId, onMarkerClick }: Props) {
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
+
   const selected = useMemo(
     () => restaurants.find((r) => r.google_place_id === selectedPlaceId && r.latitude != null && r.longitude != null),
     [restaurants, selectedPlaceId],
@@ -94,22 +128,40 @@ export default function MapView({ location, restaurants, selectedPlaceId, onMark
       {restaurants.map((r) => {
         if (!r.latitude || !r.longitude) return null
         const isSelected = r.google_place_id === selectedPlaceId
-        const icon = isSelected
-          ? ICON_SELECTED
-          : r.is_open_now === false
-            ? ICON_CLOSED
-            : ICON_DEFAULT
+        const isHovered = r.google_place_id === hoveredId
+
+        // Use image icon if available, otherwise fall back to pin icon
+        const shouldHighlight = isSelected || isHovered
+        const icon = r.photo_url
+          ? makeImageIcon(r.photo_url, shouldHighlight)
+          : shouldHighlight
+            ? makePinIcon('#dc2626', true)
+            : r.is_open_now === false
+              ? makePinIcon('#94a3b8', false)
+              : makePinIcon('#f97316', false)
+
+        const mapsUrl = r.address
+          ? `https://www.google.com/maps/search/${encodeURIComponent(r.name + ' ' + r.address)}`
+          : `https://www.google.com/maps/search/${encodeURIComponent(r.name)}`
+
         return (
           <Marker
             key={r.google_place_id}
             position={[r.latitude, r.longitude]}
             icon={icon}
-            eventHandlers={{ click: () => onMarkerClick(r.google_place_id) }}
+            eventHandlers={{
+              click: () => onMarkerClick(r.google_place_id),
+              mouseover: () => setHoveredId(r.google_place_id),
+              mouseout: () => setHoveredId(null),
+            }}
           >
             <Popup>
-              <div className="text-sm min-w-[180px]">
+              <div className="text-sm min-w-[220px]">
+                {r.photo_url && (
+                  <img src={r.photo_url} alt={r.name} className="w-full h-32 object-cover rounded-lg mb-2" />
+                )}
                 <p className="font-bold text-ink-900">{r.name}</p>
-                <div className="flex items-center gap-1.5 mt-0.5">
+                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                   {r.is_open_now != null && (
                     <span className={`text-[10px] font-bold uppercase tracking-wider ${r.is_open_now ? 'text-emerald-600' : 'text-rose-500'}`}>
                       {r.is_open_now ? '● Open' : '● Closed'}
@@ -120,7 +172,17 @@ export default function MapView({ location, restaurants, selectedPlaceId, onMark
                   )}
                   {r.rating && <span className="text-[11px]">⭐ {r.rating.toFixed(1)}</span>}
                 </div>
-                {r.address && <p className="text-[11px] text-ink-500 mt-1">{r.address}</p>}
+                {r.address && (
+                  <a
+                    href={mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-800 mt-2 font-medium"
+                  >
+                    <MapPin className="w-3 h-3" />
+                    {r.address}
+                  </a>
+                )}
               </div>
             </Popup>
           </Marker>

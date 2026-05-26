@@ -147,3 +147,17 @@ export function Refresh(props: SVGProps<SVGSVGElement>) {
     </svg>
   )
 }
+
+export function Burger(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...base} fill="currentColor" stroke="none" viewBox="0 0 24 24" {...props}>
+      <path d="M3 8c0-1 .9-2 2-2h14c1.1 0 2 .9 2 2v1H3V8Z" />
+      <path d="M4 10h16c1 0 1.5.5 1.5 1.5s-.5 1.5-1.5 1.5H4c-1 0-1.5-.5-1.5-1.5S3 10 4 10Z" />
+      <circle cx="7" cy="11.5" r="1" fill="white" />
+      <circle cx="12" cy="11.5" r="1" fill="white" />
+      <circle cx="17" cy="11.5" r="1" fill="white" />
+      <path d="M3 13h18c1 0 1.5.5 1.5 1.5-.5 2-1 3-2 3.5H3.5c-1-.5-1.5-1.5-2-3.5C1.5 13.5 2 13 3 13Z" />
+      <path d="M3 17c0-1 .9-2 2-2h14c1.1 0 2 .9 2 2v1H3v-1Z" />
+    </svg>
+  )
+}

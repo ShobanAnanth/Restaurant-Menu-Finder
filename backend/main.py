@@ -27,10 +27,15 @@ from routes import restaurants, menus
 # Create tables on startup
 Base.metadata.create_all(bind=engine)
 
-# Add embedding column if this is an existing DB that pre-dates the feature
+# Add new columns to existing DBs
 with engine.connect() as _conn:
     try:
         _conn.execute(text("ALTER TABLE menu_items ADD COLUMN embedding JSON"))
+        _conn.commit()
+    except Exception:
+        pass  # column already exists
+    try:
+        _conn.execute(text("ALTER TABLE restaurants ADD COLUMN photo_url TEXT"))
         _conn.commit()
     except Exception:
         pass  # column already exists

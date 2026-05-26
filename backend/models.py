@@ -20,6 +20,7 @@ class Restaurant(Base):
     longitude = Column(Float)
     phone = Column(String)
     website_url = Column(Text)
+    photo_url = Column(Text)
     price_level = Column(Integer) # 1–4
     cuisine_categories = Column(JSON, default=list)
     rating = Column(Float)

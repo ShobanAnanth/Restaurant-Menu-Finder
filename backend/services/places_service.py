@@ -76,7 +76,8 @@ def search_nearby_restaurants(lat: float, lng: float, radius_meters: float) -> L
             "places.types,"
             "places.rating,"
             "places.currentOpeningHours,"
-            "places.regularOpeningHours"
+            "places.regularOpeningHours,"
+            "places.photos"
         ),
     }
     payload = {
@@ -104,6 +105,15 @@ def search_nearby_restaurants(lat: float, lng: float, radius_meters: float) -> L
         current_hours = place.get("currentOpeningHours") or {}
         is_open_now = current_hours.get("openNow")
 
+        # Extract first photo URL if available
+        photo_url = None
+        photos = place.get("photos", [])
+        if photos and len(photos) > 0:
+            photo_name = photos[0].get("name")
+            if photo_name:
+                # Google Places API photo reference format
+                photo_url = f"https://places.googleapis.com/v1/{photo_name}/media?key={api_key}&max_height_px=400"
+
         results.append({
             "google_place_id": place.get("id", ""),
             "name": place.get("displayName", {}).get("text", "Unknown"),
@@ -112,6 +122,7 @@ def search_nearby_restaurants(lat: float, lng: float, radius_meters: float) -> L
             "longitude": (place.get("location") or {}).get("longitude"),
             "phone": place.get("nationalPhoneNumber"),
             "website_url": place.get("websiteUri"),
+            "photo_url": photo_url,
             "price_level": _PRICE_MAP.get(place.get("priceLevel", ""), None),
             "cuisine_categories": cuisine_categories,
             "rating": place.get("rating"),

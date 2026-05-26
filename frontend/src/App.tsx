@@ -7,7 +7,7 @@ import MapView from './components/MapView'
 import RestaurantList from './components/RestaurantList'
 import MenuItemList from './components/MenuItemList'
 import SearchControls from './components/SearchControls'
-import { Flame, Sparkle, Utensils } from './components/icons'
+import { Burger, Sparkle, Utensils } from './components/icons'
 
 const DEFAULT_FILTERS: Filters = {
   openOnly: false,
@@ -75,7 +75,7 @@ export default function App() {
       <header className="bg-white border-b border-ink-200 px-5 py-3 flex items-center gap-5 shadow-card z-20 shrink-0">
         <div className="flex items-center gap-2 shrink-0">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-rose-500 text-white flex items-center justify-center shadow-pop">
-            <Flame className="w-5 h-5" />
+            <Burger className="w-5 h-5" />
           </div>
           <div className="leading-tight">
             <h1 className="text-base font-bold text-ink-900 tracking-tight">MenuFinder</h1>
@@ -182,7 +182,7 @@ function EmptyHero() {
   return (
     <div className="flex flex-col items-center justify-center flex-1 text-center p-8">
       <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-brand-500 via-rose-500 to-pink-500 text-white flex items-center justify-center shadow-pop mb-5">
-        <Flame className="w-9 h-9" />
+        <Burger className="w-9 h-9" />
       </div>
       <h2 className="text-xl font-bold text-ink-900 tracking-tight">Find restaurants near you</h2>
       <p className="text-sm text-ink-500 mt-1.5 max-w-xs leading-relaxed">

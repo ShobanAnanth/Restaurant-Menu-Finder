@@ -38,6 +38,7 @@ class RestaurantOut(BaseModel):
     longitude: Optional[float] = None
     phone: Optional[str] = None
     website_url: Optional[str] = None
+    photo_url: Optional[str] = None
     price_level: Optional[int] = None
     cuisine_categories: Optional[List[str]] = []
     rating: Optional[float] = None

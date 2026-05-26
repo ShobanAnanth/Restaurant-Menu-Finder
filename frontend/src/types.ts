@@ -10,6 +10,7 @@ export interface Restaurant {
   longitude?: number
   phone?: string
   website_url?: string
+  photo_url?: string
   price_level?: number        // 1–4
   cuisine_categories?: string[]
   rating?: number
