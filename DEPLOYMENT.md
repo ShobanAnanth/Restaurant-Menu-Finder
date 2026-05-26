@@ -1,14 +1,16 @@
 # Deployment Guide
 
-This guide covers deploying Restaurant Menu Finder to production using Vercel (frontend) and Railway (backend).
+This guide covers deploying Restaurant Menu Finder to production using **Vercel (frontend)** and **Render (backend)** — **completely free**.
 
 ## Prerequisites
 
-- GitHub account
-- Vercel account (free tier OK) — https://vercel.com
-- Railway account (free tier OK) — https://railway.app
+- GitHub account (you have this ✓)
+- Vercel account (free) — https://vercel.com
+- Render account (free) — https://render.com
 - Google Places API key
 - OpenAI API key (optional, for faster menu extraction)
+
+**Cost: $0/month** ✓
 
 ---
 
@@ -41,44 +43,58 @@ In Vercel dashboard:
 
 ---
 
-## Step 2: Deploy Backend to Railway
+## Step 2: Deploy Backend to Render (FREE)
 
-### 1. Connect to Railway
+### 1. Create a New Service on Render
 
-1. Go to https://railway.app
-2. Click **Create New Project**
-3. Select **Deploy from GitHub**
-4. Authorize Railway with GitHub
-5. Select the `Restaurant-Menu-Finder` repository
-6. Railway auto-detects Python and creates a PostgreSQL database
+1. Go to https://render.com
+2. Click **New +** → **Web Service**
+3. Select **Deploy an existing repository**
+4. Authorize Render with GitHub
+5. Search for and select `Restaurant-Menu-Finder`
+6. Click **Connect**
 
-### 2. Set Environment Variables
+### 2. Configure the Service
 
-In Railway dashboard → Variables:
+In the Render form, fill in:
+
+| Field | Value |
+|-------|-------|
+| **Name** | `restaurant-menu-finder-api` |
+| **Environment** | `Python 3` |
+| **Build Command** | `pip install -r backend/requirements.txt` |
+| **Start Command** | `uvicorn backend.main:app --host 0.0.0.0 --port $PORT` |
+| **Instance Type** | `Free` (the slider on the right) |
+
+### 3. Add Environment Variables
+
+Click **Advanced** → **Add Environment Variable**:
 
 ```
 GOOGLE_PLACES_API_KEY=your_api_key_here
 OPENAI_API_KEY=your_api_key_here (optional)
-DATABASE_URL=automatically_set_by_railway
 ```
 
-### 3. Deploy
+### 4. Deploy
 
-1. Railway auto-deploys when you push to main
-2. Monitor build logs in the Railway dashboard
-3. Once deployed, you'll get a public URL like `https://restaurant-menu-finder-prod-xxx.railway.app`
+1. Click **Create Web Service**
+2. Render builds and deploys automatically
+3. Monitor logs in the dashboard
+4. Once live, you'll get a URL like `https://restaurant-menu-finder-api.onrender.com`
+
+**Note:** Free tier on Render spins down after 15 min of inactivity. First request after spin-down takes ~30 sec (acceptable for a portfolio).
 
 ---
 
 ## Step 3: Connect Frontend to Backend
 
-Once the backend is deployed, update the frontend to use the backend URL:
+Once Render backend is deployed, update the frontend to use the backend URL:
 
 ### Option A: Environment Variable (Recommended)
 
 In Vercel dashboard:
 1. Settings → Environment Variables
-2. Add `VITE_API_URL=https://your-railway-url.railway.app`
+2. Add `VITE_API_URL=https://your-render-service.onrender.com`
 3. Redeploy
 
 ### Option B: Hardcode (Quick)
@@ -86,7 +102,7 @@ In Vercel dashboard:
 Edit `frontend/src/api.ts`:
 ```typescript
 const api = axios.create({ 
-  baseURL: 'https://your-railway-url.railway.app/api' 
+  baseURL: 'https://your-render-service.onrender.com/api' 
 })
 ```
 
@@ -108,11 +124,12 @@ Commit and push — Vercel auto-redeploys.
 - Check that the Railway URL is public (not private)
 - Browser console should show the full API URL being called
 
-### Playwright/Chromium errors on Railway
+### Playwright/Chromium errors on Render
 
-- Railway doesn't have Chromium pre-installed
-- Solution: Use the httpx-only scraping path (no JavaScript rendering)
-- Or use a larger Railway plan that includes headless browsers
+- Render's free tier doesn't have Chromium pre-installed
+- Solution: The app falls back to httpx + heuristic parser (no JavaScript rendering)
+- Works great for 90% of restaurant sites
+- If you need Playwright, upgrade to a paid Render plan
 
 ### Out of OpenAI quota
 
@@ -129,23 +146,27 @@ Commit and push — Vercel auto-redeploys.
 - Check deployment logs for build errors
 - Analytics available on Pro plan
 
-### Railway
-- Dashboard: https://railway.app
-- Real-time logs in the project view
-- Monitor resource usage (CPU, memory)
+### Render
+- Dashboard: https://dashboard.render.com
+- Real-time logs in the service view
+- Monitor activity and spin-down events
 
 ---
 
 ## Cost
 
+✅ **Completely FREE**
+
 **Vercel (Frontend)**
 - Free tier: up to 100 GB bandwidth/month
-- Plenty for a portfolio project
+- Perfect for portfolio projects
 
-**Railway (Backend)**
-- Free tier: $5 credits/month
-- Estimated cost: ~$2–5/month for light usage
-- Can be higher with frequent scraping + Playwright
+**Render (Backend)**
+- Free tier: always free
+- Spins down after 15 min of inactivity (acceptable for portfolio)
+- No credit card required
+
+**Total cost: $0/month** ✓
 
 ---
 

@@ -8,12 +8,13 @@ A full-stack web application that discovers nearby restaurants and scrapes their
 
 ---
 
-## 🚀 Live Demo (Coming Soon)
+## 🚀 Live Demo (In Progress)
 
-- **Frontend:** Deploying to Vercel
-- **Backend:** Deploying to Railway
+- **Frontend:** Deploying to Vercel (free)
+- **Backend:** Deploying to Render (free)
+- **Cost:** $0/month ✓
 
-Check back soon for the live link!
+See [DEPLOYMENT.md](DEPLOYMENT.md) for live deployment instructions.
 
 ---
 
@@ -113,15 +114,15 @@ Open http://localhost:5173 in your browser.
 2. **Environment variables (optional):**
    - Set `VITE_API_URL` to your backend URL (defaults to `http://localhost:8000/api`)
 
-### Backend (Railway)
+### Backend (Render - FREE)
 
-1. **Connect to Railway:**
-   - Go to https://railway.app
-   - Create new project → Deploy from GitHub
-   - Select this repo
-   - Railway auto-detects Python/FastAPI
+1. **Connect to Render:**
+   - Go to https://render.com
+   - Click **New +** → **Web Service**
+   - Deploy from GitHub → select this repo
+   - Render auto-detects Python/FastAPI
 
-2. **Set environment variables in Railway:**
+2. **Set environment variables in Render:**
    ```
    GOOGLE_PLACES_API_KEY=your_key_here
    OPENAI_API_KEY=your_key_here (optional)
@@ -129,7 +130,9 @@ Open http://localhost:5173 in your browser.
 
 3. **Update frontend API base URL:**
    - Once backend is deployed, update frontend environment variable
-   - Or hardcode the Railway URL in `frontend/src/api.ts`
+   - Or hardcode the Render URL in `frontend/src/api.ts`
+
+**Note:** Render's free tier spins down after 15 min of inactivity (~30 sec wake-up time).
 
 ### Environment Variables
 
