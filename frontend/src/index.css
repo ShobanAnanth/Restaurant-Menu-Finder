@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  background: #eef2f7 !important;
+}
+
+.leaflet-control-attribution {
+  font-size: 10px !important;
+  background: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Polished scrollbar */
+.scroll-elegant::-webkit-scrollbar { width: 8px; height: 8px; }
+.scroll-elegant::-webkit-scrollbar-track { background: transparent; }
+.scroll-elegant::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.12);
+  border-radius: 8px;
+}
+.scroll-elegant::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.2); }
+
+.shimmer-bg {
+  background: linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 40%, #f1f5f9 80%);
+  background-size: 800px 100%;
+}
