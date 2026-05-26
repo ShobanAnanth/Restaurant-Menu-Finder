@@ -1,7 +1,9 @@
 import axios from 'axios'
 import type { Filters, MenuItem, MenuStatus, Restaurant, Unit } from './types'
 
-const api = axios.create({ baseURL: '/api' })
+// Use environment variable for API base URL, fall back to relative path for local dev
+const apiBaseURL = import.meta.env.VITE_API_URL || '/api'
+const api = axios.create({ baseURL: apiBaseURL })
 
 export async function fetchNearby(
   lat: number,
