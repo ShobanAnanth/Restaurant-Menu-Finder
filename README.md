@@ -4,6 +4,17 @@ A full-stack web application that discovers nearby restaurants and scrapes their
 
 **Live Features:** Geolocation-based search · Real-time open/closed status · AI-powered semantic search across menus · Heuristic menu extraction · Multi-source scraping with automatic fallbacks
 
+> **⚠️ Status:** Active development. Core features working; deployment & testing in progress.
+
+---
+
+## 🚀 Live Demo (Coming Soon)
+
+- **Frontend:** Deploying to Vercel
+- **Backend:** Deploying to Railway
+
+Check back soon for the live link!
+
 ---
 
 ## 🎯 Why This Project?
@@ -86,6 +97,47 @@ npm run dev                       # Starts on http://localhost:5173
 ```
 
 Open http://localhost:5173 in your browser.
+
+---
+
+## 🚀 Deployment
+
+### Frontend (Vercel)
+
+1. **Connect your GitHub repo to Vercel:**
+   - Go to https://vercel.com/new
+   - Import this repository
+   - Vercel auto-detects it's a Vite app
+   - Deploy!
+
+2. **Environment variables (optional):**
+   - Set `VITE_API_URL` to your backend URL (defaults to `http://localhost:8000/api`)
+
+### Backend (Railway)
+
+1. **Connect to Railway:**
+   - Go to https://railway.app
+   - Create new project → Deploy from GitHub
+   - Select this repo
+   - Railway auto-detects Python/FastAPI
+
+2. **Set environment variables in Railway:**
+   ```
+   GOOGLE_PLACES_API_KEY=your_key_here
+   OPENAI_API_KEY=your_key_here (optional)
+   ```
+
+3. **Update frontend API base URL:**
+   - Once backend is deployed, update frontend environment variable
+   - Or hardcode the Railway URL in `frontend/src/api.ts`
+
+### Environment Variables
+
+Create a `.env` file in the `backend/` folder:
+```
+GOOGLE_PLACES_API_KEY=xxx       # Required
+OPENAI_API_KEY=yyy              # Optional
+```
 
 ---
 
@@ -186,16 +238,25 @@ python _t2.py "Raising Cane's" "Marlton, NJ" ""
 
 ---
 
-## 🚀 Future Enhancements
+## 🚀 Roadmap
 
-- [ ] Deploy to Vercel (frontend) + Railway/Render (backend)
+**Currently In Progress:**
+- [x] Core scraping + extraction pipeline (working)
+- [x] Frontend UI with map + search (working)
+- [x] Local development setup
+- [ ] Deploy to Vercel (frontend) — in progress
+- [ ] Deploy to Railway (backend) — in progress
+- [ ] Full end-to-end testing in production
+
+**Future Enhancements:**
 - [ ] Docker setup for one-command launch
-- [ ] User preferences (saved restaurants, favorite items)
+- [ ] User authentication (saved restaurants, favorites)
 - [ ] Mobile app (React Native)
-- [ ] Menu history (price tracking over time)
-- [ ] Allergen warnings + detailed nutritional data
+- [ ] Menu history + price tracking
+- [ ] Allergen warnings + nutritional data
 - [ ] Integration with reservation systems (OpenTable, Resy)
 - [ ] Bulk menu updates via batch jobs
+- [ ] Advanced filtering (dietary preferences, cuisine fusion)
 
 ---
 
