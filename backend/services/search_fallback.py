@@ -60,19 +60,24 @@ _HEADERS = {
 }
 
 
+def _strip_www(host: str) -> str:
+    # NB: don't use str.lstrip("www.") — that strips any combination of those
+    # characters from the left (e.g. "weather.com" → "eather.com").
+    return host[4:] if host.startswith("www.") else host
+
+
 def _strip_own_domain(own_url: Optional[str]) -> Optional[str]:
     if not own_url:
         return None
     try:
-        host = urlparse(own_url).netloc.lower()
-        return host.lstrip("www.")
+        return _strip_www(urlparse(own_url).netloc.lower())
     except Exception:
         return None
 
 
 def _host_of(url: str) -> str:
     try:
-        return urlparse(url).netloc.lower().lstrip("www.")
+        return _strip_www(urlparse(url).netloc.lower())
     except Exception:
         return ""
 

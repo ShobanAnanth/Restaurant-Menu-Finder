@@ -5,19 +5,24 @@ import type { Filters, MenuItem, MenuStatus, Restaurant, Unit } from './types'
 const apiBaseURL = import.meta.env.VITE_API_URL || '/api'
 const api = axios.create({ baseURL: apiBaseURL })
 
+// Build a fetchable URL for a photo reference returned by the backend
+// (a bare "places/<id>/photos/<id>" string — never a full Google URL with key).
+export function photoSrc(photoRef?: string | null): string | undefined {
+  if (!photoRef) return undefined
+  // If the backend (or legacy DB row) already returned a full URL, pass through.
+  if (/^https?:\/\//i.test(photoRef)) return photoRef
+  return `${apiBaseURL}/photos/${photoRef.replace(/^\/+/, '')}`
+}
+
 export async function fetchNearby(
   lat: number,
   lng: number,
   radius: number,
   unit: Unit,
-  filters: Filters,
 ): Promise<Restaurant[]> {
+  // Filters (openOnly, price tiers, cuisines) are applied client-side so that
+  // toggling a filter doesn't re-hit the paid Google Places API.
   const params: Record<string, unknown> = { lat, lng, radius, unit }
-  if (filters.openOnly) params.open_only = true
-  if (filters.priceMin != null) params.price_min = filters.priceMin
-  if (filters.priceMax != null) params.price_max = filters.priceMax
-  if (filters.cuisines.length === 1) params.cuisine = filters.cuisines[0]
-
   const { data } = await api.get<Restaurant[]>('/restaurants/nearby', { params })
   return data
 }

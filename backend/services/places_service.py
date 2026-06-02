@@ -105,14 +105,15 @@ def search_nearby_restaurants(lat: float, lng: float, radius_meters: float) -> L
         current_hours = place.get("currentOpeningHours") or {}
         is_open_now = current_hours.get("openNow")
 
-        # Extract first photo URL if available
+        # Extract first photo reference if available. Never embed the API key
+        # in a URL that ships to the browser — fetch through the /api/photos
+        # proxy instead.
         photo_url = None
         photos = place.get("photos", [])
-        if photos and len(photos) > 0:
+        if photos:
             photo_name = photos[0].get("name")
             if photo_name:
-                # Google Places API photo reference format
-                photo_url = f"https://places.googleapis.com/v1/{photo_name}/media?key={api_key}&max_height_px=400"
+                photo_url = photo_name  # bare reference like "places/<id>/photos/<id>"
 
         results.append({
             "google_place_id": place.get("id", ""),

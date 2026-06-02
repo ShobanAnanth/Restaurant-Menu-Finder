@@ -18,14 +18,13 @@ import io
 import re
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple
-from urllib.parse import urlparse, urljoin
+from urllib.parse import urljoin
 
 import httpx
 
 from services.jsonld_menu_extractor import extract_from_html as extract_jsonld
 
 MENU_KEYWORDS = ["menu", "our-menu", "food", "eat", "dine", "order"]
-_COMMON_MENU_PATHS = ["/menu", "/our-menu", "/food", "/menus", "/food-menu"]
 
 _HEADERS = {
     "User-Agent": (
@@ -205,11 +204,10 @@ def _find_menu_link_in_html(soup, base_url: str) -> Optional[str]:
             continue
         if any(kw in text or kw in href.lower() for kw in MENU_KEYWORDS):
             return urljoin(base_url, href)
-    parsed = urlparse(base_url)
-    return f"{parsed.scheme}://{parsed.netloc}{_COMMON_MENU_PATHS[0]}"
+    return None
 
 
-def _find_menu_link_in_page(page, base_url: str) -> Optional[str]:
+def _find_menu_link_in_page(page, _base_url: str) -> Optional[str]:
     try:
         links = page.evaluate(
             "() => Array.from(document.querySelectorAll('a'))"
@@ -224,8 +222,7 @@ def _find_menu_link_in_page(page, base_url: str) -> Optional[str]:
                 return href
     except Exception:
         pass
-    parsed = urlparse(base_url)
-    return f"{parsed.scheme}://{parsed.netloc}{_COMMON_MENU_PATHS[0]}"
+    return None
 
 
 def _find_pdf_in_html(soup, base_url: str) -> Optional[str]:

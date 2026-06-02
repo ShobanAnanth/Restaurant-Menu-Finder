@@ -9,3 +9,4 @@ openai>=1.35.3
 pdfplumber>=0.11.0
 python-multipart>=0.0.9
 numpy>=1.26.0
+psutil>=5.9.0

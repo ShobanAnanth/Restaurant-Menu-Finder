@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { fetchNearby, searchMenuItems } from './api'
 import type { Filters, Restaurant, SortMode, Unit } from './types'
 import FilterPanel from './components/FilterPanel'
@@ -36,14 +36,30 @@ export default function App() {
   const debouncedMenuQuery = useDebounced(menuQuery, 350)
 
   const {
-    data: restaurants = [],
+    data: rawRestaurants = [],
     isFetching: loadingRestaurants,
     error: restaurantError,
   } = useQuery({
-    queryKey: ['restaurants', location, radius, unit, filters],
-    queryFn: () => fetchNearby(location!.lat, location!.lng, radius, unit, filters),
+    // Filters are NOT in the queryKey on purpose — they're applied client-side
+    // so toggling them doesn't trigger a paid Google Places API request.
+    queryKey: ['restaurants', location, radius, unit],
+    queryFn: () => fetchNearby(location!.lat, location!.lng, radius, unit),
     enabled: !!location,
   })
+
+  const restaurants = useMemo(() => {
+    return rawRestaurants.filter((r) => {
+      if (filters.openOnly && r.is_open_now !== true) return false
+      if (filters.priceMin != null && (r.price_level == null || r.price_level < filters.priceMin)) return false
+      if (filters.priceMax != null && (r.price_level == null || r.price_level > filters.priceMax)) return false
+      if (filters.cuisines.length > 0) {
+        const cats = (r.cuisine_categories || []).map((c) => c.toLowerCase())
+        const ok = filters.cuisines.some((sel) => cats.some((c) => c.includes(sel.toLowerCase())))
+        if (!ok) return false
+      }
+      return true
+    })
+  }, [rawRestaurants, filters])
 
   const {
     data: menuItems = [],

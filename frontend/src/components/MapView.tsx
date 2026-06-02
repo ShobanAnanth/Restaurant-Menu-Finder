@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { Restaurant } from '../types'
 import L from 'leaflet'
 import { MapPin } from './icons'
+import { photoSrc } from '../api'
 
 function makePinIcon(color: string, selected = false): L.DivIcon {
   const size = selected ? 36 : 28
@@ -63,10 +64,6 @@ function makeImageIcon(photoUrl: string | undefined, selected = false): L.DivIco
     popupAnchor: [0, -size / 2 - 10],
   })
 }
-
-const ICON_DEFAULT = makePinIcon('#f97316')
-const ICON_SELECTED = makePinIcon('#dc2626', true)
-const ICON_CLOSED = makePinIcon('#94a3b8')
 
 function Recenter({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap()
@@ -132,8 +129,9 @@ export default function MapView({ location, restaurants, selectedPlaceId, onMark
 
         // Use image icon if available, otherwise fall back to pin icon
         const shouldHighlight = isSelected || isHovered
-        const icon = r.photo_url
-          ? makeImageIcon(r.photo_url, shouldHighlight)
+        const photo = photoSrc(r.photo_url)
+        const icon = photo
+          ? makeImageIcon(photo, shouldHighlight)
           : shouldHighlight
             ? makePinIcon('#dc2626', true)
             : r.is_open_now === false
@@ -157,8 +155,8 @@ export default function MapView({ location, restaurants, selectedPlaceId, onMark
           >
             <Popup>
               <div className="text-sm min-w-[220px]">
-                {r.photo_url && (
-                  <img src={r.photo_url} alt={r.name} className="w-full h-32 object-cover rounded-lg mb-2" />
+                {photo && (
+                  <img src={photo} alt={r.name} className="w-full h-32 object-cover rounded-lg mb-2" />
                 )}
                 <p className="font-bold text-ink-900">{r.name}</p>
                 <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">

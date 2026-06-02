@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { fetchMenu, fetchMenuStatus } from '../api'
 import type { MenuItem } from '../types'
 
@@ -29,35 +29,58 @@ export default function MenuPanel({ placeId }: Props) {
   const status = restaurant?.menu_status ?? 'none'
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const attemptsRef = useRef(0)
+  // Hard ceiling on polling; ~75 attempts × 3s ≈ 225s, well past the backend's
+  // 120s "stuck" threshold which restarts the scrape automatically.
+  const MAX_ATTEMPTS = 75
+  const [pollGaveUp, setPollGaveUp] = useState(false)
 
   useEffect(() => {
-    if (status === 'pending') {
-      attemptsRef.current = 0
-      intervalRef.current = setInterval(() => {
-        attemptsRef.current += 1
-        if (attemptsRef.current > 30) {
-          if (intervalRef.current) clearInterval(intervalRef.current)
-          refetch()
-          return
-        }
-        fetchMenuStatus(placeId)
-          .then((s) => {
-            if (s.status !== 'pending' && intervalRef.current) {
-              clearInterval(intervalRef.current)
-              refetch()
-            }
-          })
-          .catch(() => {})
-      }, 3000)
+    if (status !== 'pending') {
+      setPollGaveUp(false)
+      return
     }
+    attemptsRef.current = 0
+    setPollGaveUp(false)
+    intervalRef.current = setInterval(() => {
+      attemptsRef.current += 1
+      if (attemptsRef.current > MAX_ATTEMPTS) {
+        if (intervalRef.current) clearInterval(intervalRef.current)
+        intervalRef.current = null
+        setPollGaveUp(true)
+        return
+      }
+      fetchMenuStatus(placeId)
+        .then((s) => {
+          if (s.status !== 'pending' && intervalRef.current) {
+            clearInterval(intervalRef.current)
+            intervalRef.current = null
+            refetch()
+          }
+        })
+        .catch(() => {})
+    }, 3000)
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
     }
   }, [status, placeId, refetch])
 
   if (isLoading) return <Pending label="Loading menu…" />
-  if (status === 'pending')
-    return <Pending label="Scraping menu… this can take 15–30 seconds" progress={attemptsRef.current / 30} />
+  if (status === 'pending') {
+    if (pollGaveUp) {
+      return (
+        <InfoState
+          tone="muted"
+          emoji="⏳"
+          title="Still scraping…"
+          body="This is taking longer than expected. Close and re-open the menu to keep waiting."
+        />
+      )
+    }
+    return <Pending label="Scraping menu… this can take 15–30 seconds" progress={attemptsRef.current / MAX_ATTEMPTS} />
+  }
 
   if (status === 'unavailable' || status === 'error') {
     return (

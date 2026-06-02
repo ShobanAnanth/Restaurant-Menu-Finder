@@ -1,5 +1,6 @@
 import concurrent.futures
 import logging
+import multiprocessing as mp
 import uuid
 from datetime import datetime, timedelta
 from typing import List, Optional
@@ -132,17 +133,86 @@ def get_menu_status(place_id: str, db: Session = Depends(get_db)):
 # ── background task ───────────────────────────────────────────────────────────
 
 def _call_with_timeout(fn, timeout, *args):
-    """Run fn(*args) in a thread, raise TimeoutError if it exceeds timeout seconds."""
+    """Run fn(*args) in a worker thread; raise TimeoutError after `timeout` seconds.
+
+    Used for lightweight pure-Python work (LLM/heuristic extraction, DDG
+    search). For the Playwright-driven scrape we use `_scrape_in_subprocess`
+    instead, since threads can't be killed and a hung Playwright would block
+    a worker forever.
+    """
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
-    future = executor.submit(fn, *args)
-    executor.shutdown(wait=False)
-    return future.result(timeout=timeout)
+    try:
+        future = executor.submit(fn, *args)
+        return future.result(timeout=timeout)
+    finally:
+        executor.shutdown(wait=False)
+
+
+def _kill_process_tree(pid: int, grace: float = 3.0) -> None:
+    """Terminate the process subtree rooted at `pid`. Needed because
+    `Process.terminate()` won't reach Playwright's Chromium grandchildren."""
+    try:
+        import psutil
+    except ImportError:
+        log.warning("[scrape] psutil not installed — falling back to single-pid kill; Chromium may orphan")
+        return
+    try:
+        parent = psutil.Process(pid)
+    except psutil.NoSuchProcess:
+        return
+    procs = parent.children(recursive=True) + [parent]
+    for pr in procs:
+        try:
+            pr.terminate()
+        except psutil.NoSuchProcess:
+            pass
+    _, alive = psutil.wait_procs(procs, timeout=grace)
+    for pr in alive:
+        try:
+            pr.kill()
+        except psutil.NoSuchProcess:
+            pass
+
+
+def _scrape_in_subprocess(url: str, timeout_s: float):
+    """Run `scrape_menu(url)` in a child process. On timeout, kill the entire
+    process tree (Python child + any Playwright/Chromium grandchildren).
+    Raises `concurrent.futures.TimeoutError` if the scrape exceeds `timeout_s`.
+    """
+    from services.scrape_runner import run_scrape
+
+    ctx = mp.get_context("spawn")
+    parent_conn, child_conn = ctx.Pipe(duplex=False)
+    # daemon=True so the worker dies if the FastAPI process exits.
+    # Playwright spawns Chromium via subprocess.Popen (not multiprocessing),
+    # so the "daemon can't have children" restriction doesn't apply here.
+    proc = ctx.Process(target=run_scrape, args=(child_conn, url), daemon=True)
+    proc.start()
+    child_conn.close()  # only the worker writes to its end
+    try:
+        if not parent_conn.poll(timeout_s):
+            raise concurrent.futures.TimeoutError(f"scrape exceeded {timeout_s}s")
+        try:
+            status, payload = parent_conn.recv()
+        except EOFError:
+            raise RuntimeError("scrape subprocess exited without sending a result")
+        if status != "ok":
+            raise RuntimeError(payload)
+        return payload
+    finally:
+        if proc.is_alive():
+            _kill_process_tree(proc.pid)
+        proc.join(2)
+        try:
+            parent_conn.close()
+        except Exception:
+            pass
 
 
 def _try_one_source(url: str, timeout_s: int = 60) -> Optional[dict]:
     """Scrape a single URL and return a structured menu dict (or None)."""
     try:
-        result: ScrapeResult = _call_with_timeout(scrape_menu, timeout_s, url)
+        result: ScrapeResult = _scrape_in_subprocess(url, timeout_s)
     except concurrent.futures.TimeoutError:
         log.info(f"[scrape]   timed out: {url}")
         return None
@@ -215,8 +285,11 @@ def _run_scrape(restaurant_id: str):
             db.commit()
             return
 
-        # Replace existing menu
-        db.query(MenuSection).filter_by(restaurant_id=restaurant.id).delete()
+        # Replace existing menu. Note: bulk .delete() bypasses ORM cascade,
+        # so we must clear MenuItem rows ourselves — otherwise re-scrapes
+        # accumulate orphan items pointing at deleted sections.
+        db.query(MenuItem).filter_by(restaurant_id=restaurant.id).delete(synchronize_session=False)
+        db.query(MenuSection).filter_by(restaurant_id=restaurant.id).delete(synchronize_session=False)
         db.commit()
 
         # Build sections and collect all items before touching the DB
