@@ -63,8 +63,10 @@ In the Render form, fill in:
 | **Name** | `restaurant-menu-finder-api` |
 | **Environment** | `Python 3` |
 | **Build Command** | `pip install -r backend/requirements.txt` |
-| **Start Command** | `uvicorn backend.main:app --host 0.0.0.0 --port $PORT` |
+| **Start Command** | `uvicorn main:app --app-dir backend --host 0.0.0.0 --port $PORT` |
 | **Instance Type** | `Free` (the slider on the right) |
+
+> **Important — don't use `uvicorn backend.main:app`**: `backend/main.py` uses bare imports (`from database import …`) so it needs `backend/` on `sys.path`. `--app-dir backend` adds it. Without this the service crashes on boot.
 
 ### 3. Add Environment Variables
 
@@ -72,7 +74,8 @@ Click **Advanced** → **Add Environment Variable**:
 
 ```
 GOOGLE_PLACES_API_KEY=your_api_key_here
-OPENAI_API_KEY=your_api_key_here (optional)
+OPENAI_API_KEY=your_api_key_here       # optional — heuristic fallback covers it
+CORS_ORIGINS=*                          # tighten to https://your-app.vercel.app once known
 ```
 
 ### 4. Deploy
@@ -114,15 +117,15 @@ Commit and push — Vercel auto-redeploys.
 
 ### Frontend builds but backend API fails
 
-- Check Railway logs for Python errors
-- Verify environment variables are set in Railway
-- Check CORS settings in `backend/main.py`
+- Check Render logs for Python errors
+- Verify env vars (`GOOGLE_PLACES_API_KEY`, `CORS_ORIGINS`) are set in Render
+- Confirm the Start Command is `uvicorn main:app --app-dir backend --host 0.0.0.0 --port $PORT` — NOT `uvicorn backend.main:app …`
 
-### Backend deploys but frontend can't reach it
+### Backend deploys but frontend can't reach it (CORS)
 
-- Verify `VITE_API_URL` is set in Vercel
-- Check that the Railway URL is public (not private)
-- Browser console should show the full API URL being called
+- Confirm `VITE_API_URL` is set in Vercel (e.g. `https://your-api.onrender.com/api`)
+- Confirm `CORS_ORIGINS` in Render contains either `*` or your exact Vercel origin (e.g. `https://your-app.vercel.app`)
+- Browser console should show the full API URL being called and any CORS-blocked errors
 
 ### Playwright/Chromium errors on Render
 
