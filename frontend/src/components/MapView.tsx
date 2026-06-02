@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import { useEffect, useMemo, useState } from 'react'
 import type { Restaurant } from '../types'
 import L from 'leaflet'
@@ -65,6 +65,36 @@ function makeImageIcon(photoUrl: string | undefined, selected = false): L.DivIco
   })
 }
 
+const YOU_ARE_HERE_ICON = L.divIcon({
+  className: '',
+  html: `
+    <div style="position: relative; width: 28px; height: 28px;">
+      <span style="
+        position: absolute; inset: 0;
+        border-radius: 50%;
+        background: #ef4444;
+        opacity: 0.35;
+        animation: rmf-pulse 1.6s ease-out infinite;
+      "></span>
+      <span style="
+        position: absolute; inset: 6px;
+        border-radius: 50%;
+        background: #dc2626;
+        border: 3px solid white;
+        box-shadow: 0 2px 10px rgba(220, 38, 38, 0.6);
+      "></span>
+    </div>
+    <style>
+      @keyframes rmf-pulse {
+        0%   { transform: scale(0.6); opacity: 0.55; }
+        100% { transform: scale(2.2); opacity: 0;    }
+      }
+    </style>
+  `,
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
+})
+
 function Recenter({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap()
   useEffect(() => {
@@ -116,10 +146,11 @@ export default function MapView({ location, restaurants, selectedPlaceId, onMark
         <FlyTo lat={selected.latitude} lng={selected.longitude} />
       )}
 
-      <Circle
-        center={[location.lat, location.lng]}
-        radius={60}
-        pathOptions={{ color: '#f97316', fillColor: '#fb923c', fillOpacity: 0.9, weight: 3 }}
+      <Marker
+        position={[location.lat, location.lng]}
+        icon={YOU_ARE_HERE_ICON}
+        interactive={false}
+        zIndexOffset={1000}
       />
 
       {restaurants.map((r) => {
