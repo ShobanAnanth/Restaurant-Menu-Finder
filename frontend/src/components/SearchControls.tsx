@@ -39,10 +39,12 @@ export default function SearchControls({
         ) : (
           <MapPin className="w-4 h-4" />
         )}
-        {hasLocation ? 'Refresh' : 'Use My Location'}
+        <span className="hidden sm:inline">{hasLocation ? 'Refresh' : 'Use My Location'}</span>
+        <span className="sm:hidden">{hasLocation ? 'Refresh' : 'Locate'}</span>
       </button>
 
-      <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-ink-50 border border-ink-200">
+      {/* Radius slider + unit toggle — desktop only. On mobile both live in FiltersDrawer. */}
+      <div className="hidden md:flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-ink-50 border border-ink-200">
         <Sliders className="w-4 h-4 text-ink-400" />
         <input
           type="range"
@@ -58,7 +60,7 @@ export default function SearchControls({
         </span>
       </div>
 
-      <div className="inline-flex p-0.5 rounded-lg bg-ink-100 text-xs font-semibold">
+      <div className="hidden md:inline-flex p-0.5 rounded-lg bg-ink-100 text-xs font-semibold">
         <button
           onClick={() => onUnitChange('miles')}
           className={`px-2.5 py-1 rounded-md transition-all ${

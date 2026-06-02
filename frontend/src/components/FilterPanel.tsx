@@ -85,7 +85,8 @@ export default function FilterPanel({ filters, sortMode, menuQuery, onFiltersCha
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+      {/* Desktop chip bar — hidden on mobile (FiltersDrawer covers it there) */}
+      <div className="hidden md:flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
         <label className="flex items-center gap-1.5 cursor-pointer select-none">
           <input
             type="checkbox"
