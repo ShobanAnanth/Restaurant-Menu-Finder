@@ -9,7 +9,9 @@ import RestaurantList from './components/RestaurantList'
 import MenuItemList from './components/MenuItemList'
 import SearchControls from './components/SearchControls'
 import MobileBottomSheet from './components/MobileBottomSheet'
-import { Burger, Sliders, Sparkle, Utensils } from './components/icons'
+import { Burger, MapPin, Search, Sliders, Sparkle, Utensils } from './components/icons'
+
+type LocationError = 'denied' | 'unavailable' | 'timeout' | null
 
 const DEFAULT_FILTERS: Filters = {
   openOnly: false,
@@ -39,6 +41,7 @@ export default function App() {
   // Mobile UI state
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
   const [sheetSnap, setSheetSnap] = useState<Snap>('mid')
+  const [locationError, setLocationError] = useState<LocationError>(null)
 
   const debouncedMenuQuery = useDebounced(menuQuery, 350)
 
@@ -77,14 +80,41 @@ export default function App() {
 
   const handleLocate = useCallback(() => {
     if (!('geolocation' in navigator)) {
-      alert('Geolocation is not supported in this browser.')
+      setLocationError('unavailable')
       return
     }
+    setLocationError(null)
     navigator.geolocation.getCurrentPosition(
-      (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      (err) => alert(`Could not get location: ${err.message}`),
-      { enableHighAccuracy: false, timeout: 8000 },
+      (pos) => {
+        setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+        setLocationError(null)
+      },
+      (err) => {
+        if (err.code === 1) setLocationError('denied')          // PERMISSION_DENIED
+        else if (err.code === 3) setLocationError('timeout')    // TIMEOUT
+        else setLocationError('unavailable')                    // POSITION_UNAVAILABLE
+      },
+      { enableHighAccuracy: false, timeout: 15000, maximumAge: 60_000 },
     )
+  }, [])
+
+  // If the browser already remembers a denied permission, surface that on first
+  // render so the user sees the manual-entry fallback without having to tap
+  // and get rejected.
+  useEffect(() => {
+    if (location || !('permissions' in navigator)) return
+    navigator.permissions
+      .query({ name: 'geolocation' as PermissionName })
+      .then((p) => {
+        if (p.state === 'denied') setLocationError('denied')
+      })
+      .catch(() => {})
+  }, [location])
+
+  const handleManualPickLocation = useCallback((loc: { lat: number; lng: number }) => {
+    setLocation(loc)
+    setLocationError(null)
+    setSheetSnap('mid')
   }, [])
 
   const selectedRestaurant: Restaurant | undefined =
@@ -110,7 +140,11 @@ export default function App() {
       : `${menuItems.length} ${menuItems.length === 1 ? 'item' : 'items'}`
 
   const listContent = !location ? (
-    <EmptyHero onLocate={handleLocate} />
+    <EmptyHero
+      onLocate={handleLocate}
+      onPickLocation={handleManualPickLocation}
+      locationError={locationError}
+    />
   ) : restaurantError ? (
     <ErrorState message="Couldn't load restaurants. Verify your Places API key and try again." />
   ) : sortMode === 'restaurant' ? (
@@ -259,27 +293,111 @@ export default function App() {
   )
 }
 
-function EmptyHero({ onLocate }: { onLocate: () => void }) {
+function EmptyHero({
+  onLocate,
+  onPickLocation,
+  locationError,
+}: {
+  onLocate: () => void
+  onPickLocation: (loc: { lat: number; lng: number }) => void
+  locationError: LocationError
+}) {
+  const [query, setQuery] = useState('')
+  const [searching, setSearching] = useState(false)
+  const [searchError, setSearchError] = useState<string | null>(null)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const q = query.trim()
+    if (!q) return
+    setSearching(true)
+    setSearchError(null)
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`
+      const resp = await fetch(url, { headers: { Accept: 'application/json' } })
+      if (!resp.ok) throw new Error('search-failed')
+      const data: Array<{ lat: string; lon: string }> = await resp.json()
+      if (!data.length) {
+        setSearchError("Couldn't find that place. Try a city or zip code.")
+        return
+      }
+      onPickLocation({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) })
+    } catch {
+      setSearchError('Search failed. Check your connection.')
+    } finally {
+      setSearching(false)
+    }
+  }
+
+  const errMsg =
+    locationError === 'denied'
+      ? 'Location is blocked in your browser. Enable it in site settings, or enter a place below.'
+      : locationError === 'timeout'
+        ? 'Location request timed out. Try again, or enter a place below.'
+        : locationError === 'unavailable'
+          ? "Couldn't determine your location. Enter a place below."
+          : null
+
   return (
-    <div className="flex flex-col items-center justify-center flex-1 text-center p-8">
-      <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-brand-500 via-rose-500 to-pink-500 text-white flex items-center justify-center shadow-pop mb-5">
-        <Burger className="w-9 h-9" />
+    <div className="flex flex-col items-center justify-center flex-1 text-center p-6 md:p-8">
+      <div className="w-16 h-16 md:w-20 md:h-20 rounded-3xl bg-gradient-to-br from-brand-500 via-rose-500 to-pink-500 text-white flex items-center justify-center shadow-pop mb-4 md:mb-5">
+        <Burger className="w-8 h-8 md:w-9 md:h-9" />
       </div>
-      <h2 className="text-xl font-bold text-ink-900 tracking-tight">Find restaurants near you</h2>
+      <h2 className="text-lg md:text-xl font-bold text-ink-900 tracking-tight">Find restaurants near you</h2>
       <p className="text-sm text-ink-500 mt-1.5 max-w-xs leading-relaxed">
-        Tap <span className="font-semibold text-ink-700">Use My Location</span> to discover nearby spots,
-        browse live menus, and search across thousands of dishes.
+        Use your location, or just type in a place to start.
       </p>
+
       <button
         onClick={onLocate}
-        className="mt-5 md:hidden px-5 py-2.5 bg-gradient-to-r from-brand-500 to-rose-500 text-white rounded-xl font-bold shadow-card"
+        className="mt-4 inline-flex items-center gap-1.5 px-5 py-2.5 bg-gradient-to-r from-brand-500 to-rose-500 text-white rounded-xl font-bold shadow-card hover:shadow-card-hover transition-all"
       >
+        <MapPin className="w-4 h-4" />
         Use My Location
       </button>
-      <div className="grid grid-cols-3 gap-2 mt-6 w-full max-w-xs">
+
+      {errMsg && (
+        <p className="mt-3 text-xs text-rose-700 bg-rose-50 border border-rose-100 rounded-lg px-3 py-2 max-w-xs">
+          {errMsg}
+        </p>
+      )}
+
+      <div className="my-4 flex items-center gap-2 w-full max-w-xs text-ink-400 text-[10px] font-bold uppercase tracking-wider">
+        <div className="flex-1 h-px bg-ink-200" />
+        <span>or</span>
+        <div className="flex-1 h-px bg-ink-200" />
+      </div>
+
+      <form onSubmit={handleSubmit} className="w-full max-w-xs">
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
+            <input
+              type="text"
+              inputMode="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="City, neighborhood, or zip"
+              className="w-full pl-9 pr-3 py-2 rounded-xl bg-ink-50 border border-ink-200 text-sm font-medium placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:bg-white"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={searching || !query.trim()}
+            className="px-4 py-2 rounded-xl bg-ink-900 text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {searching ? '…' : 'Go'}
+          </button>
+        </div>
+        {searchError && (
+          <p className="mt-2 text-xs text-rose-700 max-w-xs text-left">{searchError}</p>
+        )}
+      </form>
+
+      <div className="grid grid-cols-3 gap-2 mt-5 w-full max-w-xs">
         <FeatureChip icon="🍔" label="Menus" />
-        <FeatureChip icon="🔎" label="AI Search" />
-        <FeatureChip icon="📍" label="Live Status" />
+        <FeatureChip icon="🔎" label="Search" />
+        <FeatureChip icon="📍" label="Live" />
       </div>
     </div>
   )
