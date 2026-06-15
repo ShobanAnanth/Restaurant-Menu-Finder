@@ -38,3 +38,39 @@ body {
   background: linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 40%, #f1f5f9 80%);
   background-size: 800px 100%;
 }
+
+/* ===== Custom animations for Dashboard polish ===== */
+/* Fade-in used for ephemeral UI like badges, menus */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.animate-fade-in { animation: fadeIn 260ms ease-out both; }
+
+/* Small pop for cards when they appear or are selected */
+@keyframes pop { from { transform: scale(0.98); opacity: 0 } 60% { transform: scale(1.02); opacity: 1 } to { transform: scale(1); } }
+.animate-pop { animation: pop 280ms cubic-bezier(.2,.9,.3,1) both; }
+
+/* Slide down header on mount */
+@keyframes slideDown { from { transform: translateY(-8px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+.animate-slide-down { animation: slideDown 320ms cubic-bezier(.2,.9,.3,1) both; }
+
+/* Subtle zoom for the map container on desktop landscape */
+@keyframes zoomIn { from { transform: scale(0.995); } to { transform: scale(1); } }
+.animate-zoom-in { animation: zoomIn 420ms ease-out both; }
+
+/* Stagger list children for a pleasing entrance */
+.list-stagger > * { opacity: 0; transform: translateY(8px); animation: fadeIn 360ms ease-out both; }
+.list-stagger > *:nth-child(1){ animation-delay: 40ms }
+.list-stagger > *:nth-child(2){ animation-delay: 80ms }
+.list-stagger > *:nth-child(3){ animation-delay: 120ms }
+.list-stagger > *:nth-child(4){ animation-delay: 160ms }
+.list-stagger > *:nth-child(5){ animation-delay: 200ms }
+.list-stagger > *:nth-child(6){ animation-delay: 240ms }
+
+/* Responsive tweaks: stronger map zoom on large landscapes, more pop on mobile portrait */
+@media (max-width: 640px) and (orientation: portrait) {
+  .animate-pop { animation-duration: 320ms }
+  .animate-slide-down { animation-duration: 240ms }
+}
+
+@media (min-width: 1024px) and (orientation: landscape) {
+  .animate-zoom-in { animation-duration: 520ms }
+}

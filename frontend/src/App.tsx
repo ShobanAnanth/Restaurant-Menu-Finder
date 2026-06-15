@@ -167,9 +167,10 @@ export default function App() {
   )
 
   return (
+    // Top-level layout: header, filters, map + list. Add subtle entrance animations
     <div className="flex flex-col h-svh bg-ink-50 font-sans text-ink-900">
       {/* ── Header ────────────────────────────────────────────────────────── */}
-      <header className="bg-white border-b border-ink-200 px-4 md:px-5 py-3 flex items-center gap-3 md:gap-5 shadow-card z-20 shrink-0">
+      <header className="bg-white border-b border-ink-200 px-4 md:px-5 py-3 flex items-center gap-3 md:gap-5 shadow-card z-20 shrink-0 animate-slide-down">
         <div className="flex items-center gap-2 shrink-0">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-rose-500 text-white flex items-center justify-center shadow-pop">
             <Burger className="w-5 h-5" />
@@ -246,8 +247,8 @@ export default function App() {
           {listContent}
         </aside>
 
-        {/* Map fills remaining space on desktop, full-bleed on mobile */}
-        <div className="flex-1 relative bg-ink-100">
+        {/* Map fills remaining space on desktop, full-bleed on mobile. apply a gentle zoom on supported viewports */}
+        <div className="flex-1 relative bg-ink-100 animate-zoom-in">
           <MapView
             location={location}
             restaurants={restaurants}

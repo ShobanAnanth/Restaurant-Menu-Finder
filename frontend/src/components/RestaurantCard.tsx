@@ -40,8 +40,9 @@ export default function RestaurantCard({ restaurant: r, isSelected, onSelect }: 
   )
 
   return (
+    // Restaurant card: clickable summary with a small entrance pop and subtle selected state
     <div
-      className={`group relative px-4 py-3 cursor-pointer transition-all ${
+      className={`group relative px-4 py-3 cursor-pointer transition-all animate-pop ${
         isSelected ? 'bg-brand-50/60' : 'hover:bg-ink-50'
       }`}
       onClick={onSelect}

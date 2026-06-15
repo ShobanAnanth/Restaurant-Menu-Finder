@@ -30,13 +30,14 @@ export default function RestaurantList({ restaurants, selectedPlaceId, loading, 
   }
 
   return (
+    // List container with gentle staggered entrance for items
     <div className="flex-1 overflow-y-auto scroll-elegant">
       <div className="sticky top-0 z-10 bg-white/90 backdrop-blur px-4 py-2.5 border-b border-ink-200">
         <p className="text-[11px] uppercase tracking-wider font-semibold text-ink-500">
           {restaurants.length} {restaurants.length === 1 ? 'spot' : 'spots'} nearby
         </p>
       </div>
-      <div className="divide-y divide-ink-100">
+      <div className="divide-y divide-ink-100 list-stagger">
         {restaurants.map((r) => (
           <RestaurantCard
             key={r.google_place_id}
